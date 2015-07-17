@@ -4,7 +4,7 @@
 Fogbugz uses an XML API, which means it needs some special handling compared to most APIs, which use JSON.
  */
 'use strict';
-var logger, request, xmlParse;
+var logger, request, xmlLite, xmlParse;
 
 logger = require('knodeo-logger').Logger;
 
@@ -12,20 +12,28 @@ request = require("knodeo-http-sync").httpSync;
 
 xmlParse = require('xml2js').parseString;
 
+xmlLite = require("node-xml-lite");
+
 exports.fogbugz = {
   token: null,
   host: null,
-  raw: true,
+  raw: false,
   attributes: {
     cases: ["ixBug", "ixBugParent", "ixBugChildren", "ixProject", "fOpen", "sProject", "ixArea", "sArea", "sTitle", "sStatus", "ixPersonAssignedTo", "sPersonAssignedTo", "sEmailAssignedTo", "ixPersonOpenedBy", "ixPersonResolvedBy", "ixPersonClosedBy", "ixPersonLastEditedBy", "ixStatus", "ixBugDuplicates", "ixBugOriginal", "sStatus", "ixPriority", "sPriority", "ixFixFor", "sFixFor", "dtFixFor", "sVersion", "sComputer", "hrsOrigEst", "hrsCurrEst", "hrsElapsed", "c", "sCategory", "dtOpened", "dtResolved", "dtClosed", "ixBugEventLatest", "dtLastUpdated", "dtDue", "dtLastView", "ixRelatedBugs", "dtLastOccurrence"]
   },
   objectify: function(xml) {
-    return {};
+    return JSON.stringify(xmlLite.parseString(xml), null, 2);
   },
   getRequest: function(suffix) {
+    var response;
     if (this.token != null) {
       console.log("" + this.baseUrl + suffix);
-      return request.get("" + this.baseUrl + suffix);
+      response = request.get("" + this.baseUrl + suffix);
+      if (this.raw) {
+        return response;
+      } else {
+        return this.objectify(response);
+      }
     } else {
       logger.error("Not logged in");
       return false;
@@ -34,6 +42,7 @@ exports.fogbugz = {
   logout: function() {
     var logoutXml;
     logoutXml = request.get(this.baseUrl + "cmd=logoff&token=" + this.token);
+    logger.info("logout");
     this.token = null;
     return true;
   },

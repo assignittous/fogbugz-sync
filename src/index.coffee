@@ -11,13 +11,13 @@ Fogbugz uses an XML API, which means it needs some special handling compared to 
 logger = require('knodeo-logger').Logger
 request = require("knodeo-http-sync").httpSync
 xmlParse = require('xml2js').parseString
-
+xmlLite = require("node-xml-lite")
 
 exports.fogbugz = {
 
   token: null
   host: null
-  raw: true
+  raw: false
 
   attributes: 
     cases: [
@@ -67,13 +67,17 @@ exports.fogbugz = {
 
   objectify: (xml)->
     # convert xml to nice json object
-    return {}
+    return JSON.stringify xmlLite.parseString(xml), null, 2
 
    
   getRequest: (suffix)->
     if @token?
       console.log "#{@baseUrl}#{suffix}"
-      return request.get("#{@baseUrl}#{suffix}")
+      response = request.get("#{@baseUrl}#{suffix}")
+      if @raw
+        return response
+      else
+        return @objectify(response)
     else
       logger.error "Not logged in"
       return false
@@ -81,6 +85,7 @@ exports.fogbugz = {
   logout: ()->
     logoutXml = request.get "#{@baseUrl}cmd=logoff&token=#{@token}"
     # todo: add some handling here
+    logger.info "logout"
     @token = null
     return true
 
@@ -106,16 +111,10 @@ exports.fogbugz = {
           if response.token?
             that.token = response.token[0]
             that.baseUrl =  "https://#{that.host}/api.asp?token=#{that.token}"
-            #logger.info "Logged in to Fogbugz as #{serviceConfig.username}"
-            #logger.info "Token #{token}"
+
             return true
           else
             return false
-            #baseUrl += "token=#{token}"
-
-
-            # List projects
-        # projectsXml = 
 
 
   projects: () ->

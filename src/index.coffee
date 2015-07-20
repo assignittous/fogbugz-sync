@@ -67,7 +67,7 @@ exports.fogbugz = {
 
   objectify: (xml)->
     # convert xml to nice json object
-    return JSON.stringify xmlLite.parseString(xml), null, 2
+    return xmlLite.parseString(xml)
 
    
   getRequest: (suffix)->

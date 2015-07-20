@@ -9,7 +9,7 @@ exports.xmlLiteParser = {
     else
       return false
 
-  parse: (obj)->
+  reduce: (obj)->
     that = @
     output = {}
 
@@ -21,7 +21,7 @@ exports.xmlLiteParser = {
 
           children = {}
           _.forEach obj.childs, (attribute)->
-            children[attribute.name] = that.parse(attribute.childs)
+            children[attribute.name] = that.reduce(attribute.childs)
           output[obj.name] = children
 
       else
@@ -32,11 +32,11 @@ exports.xmlLiteParser = {
             if !@isArrayOfObjects(obj)
               output = obj[0]
             else
-              output = that.parse(obj[0])
+              output = that.reduce(obj[0])
           else
             output = []
             _.forEach obj, (item)->
-              output.push that.parse(item)
+              output.push that.reduce(item)
         else
           # todo: fix this? output should return {} by default
           console.log "got a non-array"
